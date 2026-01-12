@@ -1,0 +1,83 @@
+# Scenario: Git-Based Rollback
+
+## Goal
+
+Learn how to rollback a deployment using Git history, demonstrating one of GitOps's key benefits.
+
+## Steps
+
+1. **Make a configuration change**:
+   ```bash
+   # Edit app/deployment.yaml and change the image version
+   # From: nginx:1.25
+   # To: nginx:1.26
+   ```
+
+2. **Commit and push**:
+   ```bash
+   git add app/deployment.yaml
+   git commit -m "Upgrade nginx to 1.26"
+   git push
+   ```
+
+3. **Watch Argo CD sync the change**:
+   ```bash
+   kubectl get pods -n demo -w
+   ```
+   You'll see pods being recreated with the new image.
+
+4. **Simulate a problem** (pretend nginx:1.26 has issues):
+   - Imagine you discovered a bug in nginx:1.26
+   - You need to rollback immediately
+
+5. **Rollback using Git**:
+   ```bash
+   git log --oneline
+   # Find the commit hash before the upgrade
+   
+   git revert HEAD
+   # This creates a new commit that undoes the change
+   
+   git push
+   ```
+
+6. **Watch automatic rollback**:
+   - Argo CD detects the new commit
+   - Automatically syncs the change
+   - Pods are recreated with nginx:1.25
+   - No manual intervention needed
+
+## Expected Argo CD Behavior
+
+- Git revert creates a new commit (preserves history)
+- Argo CD syncs the revert automatically
+- The cluster returns to the previous state
+- Full audit trail is maintained
+
+## Learning Outcome
+
+**Rollbacks are just Git operations**
+
+With GitOps:
+- Rollback = revert a commit
+- No need to remember kubectl commands
+- Full history is preserved
+- Rollbacks are as fast as any other change
+- Works the same at 2am as it does during office hours
+
+## Alternative: Reset to Specific Version
+
+Instead of `git revert`, you can also rollback to any point in history:
+
+```bash
+# View history
+git log --oneline
+
+# Reset to a specific commit
+git reset --hard <commit-hash>
+
+# Force push (only safe in non-production scenarios)
+git push --force
+```
+
+Note: Force push should be avoided in production. Prefer `git revert` for a cleaner history.

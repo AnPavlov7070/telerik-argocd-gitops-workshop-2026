@@ -1,0 +1,55 @@
+# Scenario: Broken Container Image
+
+## Goal
+
+Learn how Argo CD handles invalid configuration by deploying a broken container image.
+
+## Steps
+
+1. **Edit the deployment manifest** in Git:
+   ```bash
+   # Change the image in app/deployment.yaml from:
+   image: nginx:1.25
+   # To an invalid image:
+   image: nginx:invalid-tag-does-not-exist
+   ```
+
+2. **Commit and push the change**:
+   ```bash
+   git add app/deployment.yaml
+   git commit -m "Break deployment with invalid image"
+   git push
+   ```
+
+3. **Watch Argo CD sync**:
+   - Open the Argo CD UI
+   - Watch the `demo-app` application
+   - Observe that Argo CD applies the change
+
+4. **Check pod status**:
+   ```bash
+   kubectl get pods -n demo
+   ```
+
+## Expected Argo CD Behavior
+
+- Argo CD will show the application as **Synced** (Git matches cluster)
+- But the health status will be **Degraded** or **Progressing**
+- Pods will show `ImagePullBackOff` or `ErrImagePull`
+- Argo CD successfully applied what's in Git, but the pods can't start
+
+## Learning Outcome
+
+**Synced ≠ Healthy**
+
+Argo CD's job is to make the cluster match Git. If Git contains broken configuration, Argo CD will faithfully apply it. You still need to monitor application health.
+
+## Fix
+
+Revert the commit:
+```bash
+git revert HEAD
+git push
+```
+
+Argo CD will automatically sync and restore the working image.

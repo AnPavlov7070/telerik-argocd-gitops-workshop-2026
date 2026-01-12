@@ -1,0 +1,56 @@
+# Scenario: Manual Configuration Drift
+
+## Goal
+
+Understand how Argo CD detects and corrects manual changes made directly to the cluster.
+
+## Steps
+
+1. **Check the current replica count**:
+   ```bash
+   kubectl get deployment demo-app -n demo
+   ```
+   You should see 2 replicas (as defined in Git).
+
+2. **Manually scale the deployment** (create drift):
+   ```bash
+   kubectl scale deployment demo-app -n demo --replicas=5
+   ```
+
+3. **Verify the manual change**:
+   ```bash
+   kubectl get deployment demo-app -n demo
+   ```
+   You should now see 5 replicas.
+
+4. **Watch Argo CD detect the drift**:
+   - Open the Argo CD UI
+   - Look at the `demo-app` application
+   - The status will change to **OutOfSync**
+   - You'll see that the replica count doesn't match Git
+
+5. **Wait for self-heal** (automated sync is enabled):
+   - After a few seconds, Argo CD will automatically correct the drift
+   - The replica count will return to 2
+   - The application will return to **Synced** status
+
+## Expected Argo CD Behavior
+
+- Argo CD continuously compares cluster state to Git
+- Manual changes are detected as **OutOfSync**
+- With `selfHeal: true`, Argo CD automatically reverts the change
+- The cluster is restored to match Git
+
+## Learning Outcome
+
+**Git is the source of truth**
+
+Manual changes to the cluster are temporary. Argo CD will detect and revert them. This prevents configuration drift and ensures consistency.
+
+## Note
+
+If you want to scale the deployment, you must:
+1. Edit `app/deployment.yaml` in Git
+2. Change `replicas: 2` to your desired number
+3. Commit and push
+4. Argo CD will sync the change
